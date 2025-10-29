@@ -26,6 +26,7 @@ class Rendering:
     - text: plain text (verbatim)
     - markdown: to be rendered as markdown
     - image: an image (data = url)
+    - video: a video (data = url)
     - link: an link to internal code or external URL
     """
     type: str
@@ -67,6 +68,22 @@ def image(url: str, style: dict | None = None, width: int | str | None = None):
             raise ValueError(f"Image not found: {path}")
 
     _current_renderings.append(Rendering(type="image", data=path, style=style))
+
+
+def video(url: str, style: dict | None = None, width: int | str | None = None):
+    """Show the video at `url`."""
+    style = style or {}
+    if width is not None:
+        style["width"] = width
+
+    if is_url(url):
+        path = cached(url, "video")
+    else:
+        path = url
+        if not os.path.exists(path):
+            raise ValueError(f"Video not found: {path}")
+
+    _current_renderings.append(Rendering(type="video", data=path, style=style))
 
 
 def is_url(url: str) -> bool:

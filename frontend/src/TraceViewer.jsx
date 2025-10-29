@@ -432,6 +432,9 @@ function isInteger(value) {
 }
 
 function renderValue(value) {
+  if (!value.type) {  // Shouldn't happen, but be defensive
+    return "NO_TYPE:" + JSON.stringify(value);  // For debugging
+  }
   if (value.type === "NoneType") {
     return "None";
   }
@@ -441,7 +444,7 @@ function renderValue(value) {
   if (["int", "float"].includes(value.type)) {
     return renderNumber(value.contents);
   }
-  if (["torch.Tensor", "numpy.ndarray"].includes(value.type)) {
+  if (["torch.Tensor", "torch.nn.parameter.Parameter", "numpy.ndarray"].includes(value.type)) {
     return renderTensor(value.shape, value.contents);
   }
   if (value.type.startsWith("sympy.core.")) {
@@ -862,6 +865,8 @@ function renderRendering(rendering, navigate) {
     return <MarkdownRenderer content={rendering.data.toString()} style={rendering.style} />;
   } else if (rendering.type === "image") {
     return <img src={rendering.data} style={rendering.style} />;
+  } else if (rendering.type === "video") {
+    return <video controls style={rendering.style}><source src={rendering.data} /></video>;
   } else if (rendering.type === "link") {
     if (rendering.internal_link) {
       // Create a link to a particular path, line number

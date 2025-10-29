@@ -186,7 +186,7 @@ def to_serializable_value(value: any) -> Value:
 
     # If the class has a designated asdict method, use it
     if hasattr(value, "asdict"):
-        return Value(type=value_type, contents=to_serializable_value(value.asdict()).contents)
+        return to_serializable_value(value.asdict())
 
     # Force contents to be a string to avoid serialization errors
     return Value(type=value_type, contents=str(value))
@@ -319,6 +319,8 @@ def execute(module_name: str, inspect_all_variables: bool) -> Trace:
                     value = locals[var]
                     if attr:
                         for attr in attr.split("."):
+                            if value is None:  # Stop early to avoid dereferencing None
+                                break
                             value = getattr(value, attr)
                     close_step.env[expr] = to_serializable_value(value)
                 else:
@@ -327,8 +329,7 @@ def execute(module_name: str, inspect_all_variables: bool) -> Trace:
         
             clear_exprs = get_clear_expressions(directives)
             for expr in clear_exprs:
-                if expr in locals:
-                    close_step.env[expr] = None
+                close_step.env[expr] = None
 
             # Capture the renderings of the last line
             close_step.renderings = pop_renderings()
