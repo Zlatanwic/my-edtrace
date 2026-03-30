@@ -801,8 +801,8 @@ function MarkdownRenderer({ content, style }) {
   return <span className="markdown" style={style} dangerouslySetInnerHTML={{ __html: renderedContent }} />;
 }
 
-function ExternalLink({ link, style }) {
-  const anchorText = getReferenceAnchorText(link);
+function ExternalLink({ link, style, anchorText }) {
+  anchorText = anchorText || getReferenceAnchorText(link);
   if (!link.title) {
     return <a href={link.url} target="_blank" style={style}>{anchorText}</a>;
   }
@@ -836,7 +836,8 @@ function getReferenceAnchorText(reference) {
   // For citations, use the title
   if (reference.authors) {
     // Get the last name of the first author, add a + if there is more than one author, and add the year
-    const lastName = getLast(reference.authors[0].split(" "));
+    const firstAuthor = reference.authors[0];
+    const lastName = firstAuthor.split(" ").includes("Team") ? firstAuthor : getLast(firstAuthor.split(" "));
     const plus = reference.authors.length > 1 ? "+" : "";
     const year = reference.date && reference.date.split("-")[0];
     return `[${lastName}${plus} ${year}]`;
@@ -880,7 +881,7 @@ function renderRendering(rendering, navigate) {
       </a>);
     } else if (rendering.external_link) {
       const link = rendering.external_link;
-      return <ExternalLink link={link} style={rendering.style} />;
+      return <ExternalLink link={link} style={rendering.style} anchorText={rendering.data} />;
     }
   } else if (rendering.type === "plot") {
     return <VegaEmbed spec={rendering.data} style={rendering.style} />;

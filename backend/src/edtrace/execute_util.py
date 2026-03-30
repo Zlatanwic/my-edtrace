@@ -91,6 +91,14 @@ def is_url(url: str) -> bool:
     return url.startswith("http")
 
 
+def url_reference(url: str, **kwargs):
+    """Makes a reference (but doesn't add it to _current_renderings)."""
+    if is_arxiv_link(url):
+        return arxiv_reference(url, **kwargs)
+    else:
+        return Reference(url=url, **kwargs)
+
+
 def link(arg: type | Reference | str | None = None, style: dict | None = None, **kwargs):
     """
     Shows a link.  There are four possible usages:
@@ -103,21 +111,17 @@ def link(arg: type | Reference | str | None = None, style: dict | None = None, *
 
     if arg is None:
         reference = Reference(**kwargs)
-        _current_renderings.append(Rendering(type="link", style=style, external_link=reference))
+        _current_renderings.append(Rendering(type="link", data=reference.label, style=style, external_link=reference))
     elif isinstance(arg, Reference):
-        _current_renderings.append(Rendering(type="link", style=style, external_link=arg))
+        _current_renderings.append(Rendering(type="link", data=arg.label, style=style, external_link=arg))
     elif isinstance(arg, type) or callable(arg):
         path = inspect.getfile(arg)
         _, line_number = inspect.getsourcelines(arg)
         anchor = CodeLocation(relativize(path), line_number)
         _current_renderings.append(Rendering(type="link", data=arg.__name__, style=style, internal_link=anchor))
     elif isinstance(arg, str):
-        if is_arxiv_link(arg):
-            reference = arxiv_reference(arg, **kwargs)
-            _current_renderings.append(Rendering(type="link", style=style, external_link=reference))
-        else:
-            reference = Reference(url=arg, **kwargs)
-            _current_renderings.append(Rendering(type="link", style=style, external_link=reference))
+        reference = url_reference(url=arg, **kwargs)
+        _current_renderings.append(Rendering(type="link", data=reference.label, style=style, external_link=reference))
     else:
         raise ValueError(f"Invalid argument: {arg}")
 

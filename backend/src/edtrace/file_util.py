@@ -2,6 +2,7 @@ import os
 import re
 import hashlib
 import shutil
+import time
 from io import BytesIO
 import requests
 
@@ -13,9 +14,20 @@ def download_file(url: str, filename: str):
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0"
         }
-        response = requests.get(url, headers=headers)
-        with open(filename, "wb") as f:
-            shutil.copyfileobj(BytesIO(response.content), f)
+        for attempt in range(50):
+            response = requests.get(url, headers=headers)
+            if response.status_code == 429:
+                wait = 2 ** attempt
+                print(f"Rate limited (429), retrying in {wait}s...")
+                time.sleep(wait)
+                continue
+            response.raise_for_status()
+            if not response.content:
+                raise ValueError(f"Empty response from {url}")
+            with open(filename, "wb") as f:
+                shutil.copyfileobj(BytesIO(response.content), f)
+            return
+        raise RuntimeError(f"Failed to download {url} after retries (rate limited)")
 
 
 def cached(url: str, prefix: str) -> str:

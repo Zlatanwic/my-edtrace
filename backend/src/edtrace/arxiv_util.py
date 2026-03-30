@@ -1,5 +1,5 @@
 import re
-import xml.etree.ElementTree as ET
+from bs4 import BeautifulSoup
 from .file_util import cached
 from .reference import Reference
 
@@ -18,33 +18,36 @@ def is_arxiv_link(url: str) -> bool:
 def arxiv_reference(url: str, **kwargs) -> Reference:
     """
     Parse an arXiv reference from a URL (e.g., https://arxiv.org/abs/2005.14165).
-    Cache the result.
+    Scrapes the arxiv.org HTML page to extract metadata.
     """
-    # Figure out the paper ID
-    paper_id = None
     m = re.search(r'arxiv.org\/...\/(\d+\.\d+)(v\d)?(\.pdf)?$', url)
     if not m:
         raise ValueError(f"Cannot handle this URL: {url}")
     paper_id = m.group(1)
 
-    metadata_url = f"http://export.arxiv.org/api/query?id_list={paper_id}"
-    metadata_path = cached(metadata_url, "arxiv")
-    with open(metadata_path, "r") as f:
-        contents = f.read()
-    root = ET.fromstring(contents)
+    abs_url = f"https://arxiv.org/abs/{paper_id}"
+    html_path = cached(abs_url, "arxiv")
+    with open(html_path, "r", encoding="utf-8") as f:
+        soup = BeautifulSoup(f.read(), "html.parser")
 
-    # Extract the relevant metadata
-    entry = root.find('{http://www.w3.org/2005/Atom}entry')
-    title = canonicalize(entry.find('{http://www.w3.org/2005/Atom}title').text)
-    authors = [canonicalize(author.find('{http://www.w3.org/2005/Atom}name').text) for author in entry.findall('{http://www.w3.org/2005/Atom}author')]
-    summary = canonicalize(entry.find('{http://www.w3.org/2005/Atom}summary').text)
-    published = entry.find('{http://www.w3.org/2005/Atom}published').text
+    def meta(name):
+        tag = soup.find("meta", {"name": name})
+        return tag["content"] if tag else ""
+
+    title = canonicalize(meta("citation_title"))
+    authors_div = soup.find("div", class_="authors")
+    if authors_div:
+        authors = [canonicalize(a.get_text()) for a in authors_div.find_all("a") if "searchtype=author" in a.get("href", "")]
+    else:
+        authors = [canonicalize(t["content"]) for t in soup.find_all("meta", {"name": "citation_author"})]
+    date = meta("citation_date").replace("/", "-")
+    summary = canonicalize(soup.find("meta", {"property": "og:description"})["content"] if soup.find("meta", {"property": "og:description"}) else "")
 
     return Reference(
         title=title,
         authors=authors,
         url=url,
-        date=published,
+        date=date,
         description=summary,
         **kwargs,
     )
