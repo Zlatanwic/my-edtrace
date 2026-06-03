@@ -36,8 +36,7 @@ function TraceViewer() {
 
     const fetchData = async () => {
       try {
-        // tracePath could be a bare 'welcome', expand to 'var/traces/welcome.json'
-        const url = tracePath.endsWith('.json') ? tracePath : `var/traces/${tracePath}.json`;
+        const url = getTraceUrl(tracePath);
         const response = await axios.get(url);
         // If we got back a string, that means we weren't able to parse it
         if (typeof response.data === 'string') {
@@ -184,7 +183,7 @@ function TraceViewer() {
   }
 
   const renderedEnv = currentStepIndex !== null && !hideEnv ? renderEnv({trace, currentStepIndex}) : null;
-  const renderedLines = renderLines({trace, currentPath, currentLineNumber, currentStepIndex, targetStepIndex, rawMode, hideEnv, showNotes, animateMode, navigate});
+  const renderedLines = renderLines({trace, tracePath, currentPath, currentLineNumber, currentStepIndex, targetStepIndex, rawMode, hideEnv, showNotes, animateMode, navigate});
 
   return (
     <div
@@ -572,7 +571,7 @@ function makeProgressBar(currentStepIndex, totalSteps) {
   );
 }
 
-function renderLines({trace, currentPath, currentLineNumber, currentStepIndex, targetStepIndex, rawMode, hideEnv, showNotes, animateMode, navigate}) {
+function renderLines({trace, tracePath, currentPath, currentLineNumber, currentStepIndex, targetStepIndex, rawMode, hideEnv, showNotes, animateMode, navigate}) {
   const linesToShow = computeLinesToShow({trace, currentStepIndex});
 
   // Build a map of line number to renderings
@@ -615,7 +614,7 @@ function renderLines({trace, currentPath, currentLineNumber, currentStepIndex, t
       // Add all renderings
       const renderedRenderings = renderings.map((rendering, index) => {
         return <span key={index}>
-          {renderRendering(rendering, navigate)}
+          {renderRendering(rendering, navigate, tracePath)}
         </span>;
       });
       renderedItems.push(<div key="renderings" className="renderings">{renderedRenderings}</div>);
@@ -861,13 +860,13 @@ function renderAuthors(authors) {
   }
 }
 
-function renderRendering(rendering, navigate) {
+function renderRendering(rendering, navigate, tracePath) {
   if (rendering.type === "markdown") {
     return <MarkdownRenderer content={rendering.data.toString()} style={rendering.style} />;
   } else if (rendering.type === "image") {
-    return <img src={rendering.data} style={rendering.style} />;
+    return <img src={resolveTraceRelativeUrl(rendering.data, tracePath)} style={rendering.style} />;
   } else if (rendering.type === "video") {
-    return <video controls style={rendering.style}><source src={rendering.data} /></video>;
+    return <video controls style={rendering.style}><source src={resolveTraceRelativeUrl(rendering.data, tracePath)} /></video>;
   } else if (rendering.type === "link") {
     if (rendering.internal_link) {
       // Create a link to a particular path, line number
@@ -888,6 +887,17 @@ function renderRendering(rendering, navigate) {
   } else {
     return <span style={rendering.style}>{rendering.data}</span>;
   }
+}
+
+function getTraceUrl(tracePath) {
+  return tracePath.endsWith('.json') ? tracePath : `var/traces/${tracePath}.json`;
+}
+
+function resolveTraceRelativeUrl(url, tracePath) {
+  if (!url || /^(https?:|data:|blob:|\/)/.test(url)) {
+    return url;
+  }
+  return new URL(url, new URL(getTraceUrl(tracePath), window.location.href)).toString();
 }
 
 function renderError(error) {
