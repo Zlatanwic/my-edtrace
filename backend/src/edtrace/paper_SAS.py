@@ -31,5 +31,5 @@ def sparse_attention():
     text("模型不需要每次都attend所有历史token，而是“稀疏”地attend部分token,省计算+省内存")
     text("### 静态稀疏vs动态稀疏")
     text("- 静态：根据位置决定attend哪些token")
-    image("../../images/static.png", width=200)
+    image("../../images/static.png", width=1000)
     text("- 动态：根据运行时内容决定看哪些 token")

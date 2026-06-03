@@ -1,6 +1,6 @@
 {
   "files": {
-    "src\\edtrace\\paper_SAS.py": "import numpy as np\nimport torch\nfrom dataclasses import dataclass\nfrom .execute_util import text, image, link, plot, note\n\ndef main():\n    in_one_word()\n    背景介绍()\n\n\n\n\n\n\n\n\ndef in_one_word():\n    text(\"简单来说，SAS主要是一个sparse attention编译器/生成器，从用户的简单的几句代码，生成高性能kernel\")\n\ndef 背景介绍():\n    kv_cache()\n    sparse_attention()\n\n\ndef kv_cache():\n    text(\"kv cache在一定程度上解决了decode阶段的compute-bound问题，就是避免每次decode都需要重新算一遍历史token的kv，但是又占用了大量显存\")\n\n\ndef sparse_attention():\n    text(\"## sparse attention\")\n    text(\"模型不需要每次都attend所有历史token，而是“稀疏”地attend部分token,省计算+省内存\")\n    text(\"### 静态稀疏vs动态稀疏\")\n    text(\"- 静态：根据位置决定attend哪些token\")\n    image(\"../../images/static.png\", width=200)\n    text(\"- 动态：根据运行时内容决定看哪些 token\")\n"
+    "src\\edtrace\\paper_SAS.py": "import numpy as np\nimport torch\nfrom dataclasses import dataclass\nfrom .execute_util import text, image, link, plot, note\n\ndef main():\n    in_one_word()\n    背景介绍()\n\n\n\n\n\n\n\n\ndef in_one_word():\n    text(\"简单来说，SAS主要是一个sparse attention编译器/生成器，从用户的简单的几句代码，生成高性能kernel\")\n\ndef 背景介绍():\n    kv_cache()\n    sparse_attention()\n\n\ndef kv_cache():\n    text(\"kv cache在一定程度上解决了decode阶段的compute-bound问题，就是避免每次decode都需要重新算一遍历史token的kv，但是又占用了大量显存\")\n\n\ndef sparse_attention():\n    text(\"## sparse attention\")\n    text(\"模型不需要每次都attend所有历史token，而是“稀疏”地attend部分token,省计算+省内存\")\n    text(\"### 静态稀疏vs动态稀疏\")\n    text(\"- 静态：根据位置决定attend哪些token\")\n    image(\"../../images/static.png\", width=1000)\n    text(\"- 动态：根据运行时内容决定看哪些 token\")\n"
   },
   "hidden_line_numbers": {
     "src\\edtrace\\paper_SAS.py": []
@@ -396,7 +396,7 @@
           "path": "src\\edtrace\\paper_SAS.py",
           "line_number": 34,
           "function_name": "sparse_attention",
-          "code": "image(\"../../images/static.png\", width=200)"
+          "code": "image(\"../../images/static.png\", width=1000)"
         }
       ],
       "env": {},
@@ -405,7 +405,7 @@
           "type": "image",
           "data": "../../images/static.png",
           "style": {
-            "width": 200
+            "width": 1000
           },
           "external_link": null,
           "internal_link": null
