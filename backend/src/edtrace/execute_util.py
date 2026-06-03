@@ -64,7 +64,7 @@ def image(url: str, style: dict | None = None, width: int | str | None = None):
         path = cached(url, "image")
     else:
         path = url
-        if not os.path.exists(path):
+        if not _local_media_exists(path):
             raise ValueError(f"Image not found: {path}")
 
     _current_renderings.append(Rendering(type="image", data=path, style=style))
@@ -80,7 +80,7 @@ def video(url: str, style: dict | None = None, width: int | str | None = None):
         path = cached(url, "video")
     else:
         path = url
-        if not os.path.exists(path):
+        if not _local_media_exists(path):
             raise ValueError(f"Video not found: {path}")
 
     _current_renderings.append(Rendering(type="video", data=path, style=style))
@@ -89,6 +89,21 @@ def video(url: str, style: dict | None = None, width: int | str | None = None):
 def is_url(url: str) -> bool:
     """Check if `url` looks like a URL."""
     return url.startswith("http")
+
+
+def _local_media_exists(path: str) -> bool:
+    if os.path.exists(path):
+        return True
+
+    if os.path.isabs(path):
+        return False
+
+    parts = [part for part in path.replace("\\", "/").split("/") if part not in ("", ".")]
+    while parts and parts[0] == "..":
+        parts.pop(0)
+
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    return bool(parts) and os.path.exists(os.path.join(repo_root, *parts))
 
 
 def url_reference(url: str, **kwargs):
