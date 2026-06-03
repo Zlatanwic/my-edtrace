@@ -4,7 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "prepare-public-assets": "node scripts/prepare-public-assets.mjs",
+    "predev": "npm run prepare-public-assets",
     "dev": "vite",
+    "prebuild": "npm run prepare-public-assets",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
