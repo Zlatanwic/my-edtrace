@@ -1,0 +1,67 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Prepare public assets
+        run: |
+          rm -rf frontend/public/images frontend/public/var
+          mkdir -p frontend/public/images frontend/public/var/traces
+          cp -R images/. frontend/public/images/
+          if [ -d var/traces ]; then cp -R var/traces/. frontend/public/var/traces/; fi
+          if [ -d backend/src/var/traces ]; then cp -R backend/src/var/traces/. frontend/public/var/traces/; fi
+
+      - name: Build
+        working-directory: frontend
+        env:
+          VITE_EDTRACE_BASE_DIR: /my-edtrace/
+          VITE_EDTRACE_DIST_DIR: dist
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

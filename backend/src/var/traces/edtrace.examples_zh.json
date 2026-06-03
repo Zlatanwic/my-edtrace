@@ -1,0 +1,2275 @@
+{
+  "files": {
+    "edtrace\\examples_zh.py": "\"\"\"edtrace 中文功能演示。\n\n这是一个对照 examples.py 的中文版示例，用来演示 edtrace 的各项能力：\nMarkdown 文本、数学公式、图片、链接、Vega-Lite 图表，以及通过\n@inspect / @clear / @stepover / @hide 指令观察程序执行过程中的变量。\n\n运行方式（在 backend/src 目录下，源码读取依赖 UTF-8 修复）：\n    PYTHONIOENCODING=utf-8 uv run --python 3.13 --with beautifulsoup4 \\\n        python -m edtrace.execute -m edtrace.examples_zh\n生成的轨迹位于 var/traces/edtrace.examples_zh.json，在查看器中打开即可。\n\"\"\"\n\nimport numpy as np\nimport torch\nfrom dataclasses import dataclass\nfrom .execute_util import text, image, link, plot, note\n\n\ndef main():\n    展示文本()\n    展示数值()\n    展示图片与链接()\n    展示图表()\n    控制指令()\n\n\ndef 展示文本():\n    text(\"# 一、文本与排版\")\n    text(\"edtrace 把每一次 `text(...)` 调用渲染成一行 Markdown，中文可以正常显示。\")\n    text(\"## 标题与强调\")\n    text(\"支持 **粗体**、*斜体*，以及行内代码 `for i in range(n)`。\")\n    text(\"## 无序列表\")\n    text(\"- 第一点：把 Python 程序当作讲义\")\n    text(\"- 第二点：边执行边展示变量\")\n    text(\"- 第三点：这一条特别长，用来验证当内容超出一行宽度时是否会自动换行，继续写一些字凑够长度\")\n    text(\"## 数学公式\")\n    text(\"行内公式 $a^2 + b^2 = c^2$，以及 softmax：$\\\\sigma(z)_i = \\\\frac{e^{z_i}}{\\\\sum_j e^{z_j}}$\")\n    text(\"一段被拆成多次调用的中文：\"), text(\"它们会\"), text(\"拼接在同一行。\")\n    note(\"这是一条旁注（按 N 键切换显示），通常用于讲者备注。\")\n    text(\"下面这行源码会被隐藏，不出现在查看器里。\")\n    secret = \"你看不到这行代码\"  # @hide\n\n\ndef 展示数值():\n    text(\"# 二、变量检查（@inspect）\")\n    text(\"在代码行末尾写注释指令 @inspect，右侧浮动面板会实时显示变量的值。\")\n\n    # NumPy 数组：不同 dtype\n    向量 = np.array([1, 2, 3], dtype=np.int32)  # @inspect 向量\n    矩阵 = np.zeros((2, 3))  # @inspect 矩阵\n\n    # PyTorch 张量\n    张量 = torch.tensor([[1.0, 2.0], [3.0, 4.0]])  # @inspect 张量\n\n    # 列表与中文键的字典\n    列表 = [1, 2, \"三\", [4, 5]]  # @inspect 列表\n    字典 = {\"姓名\": \"小明\", \"成绩\": [90, 85, 100]}  # @inspect 字典\n\n    # 数据类：类名与字段名都用中文\n    @dataclass(frozen=True)\n    class 学生:\n        姓名: str\n        成绩: list[int]\n    某学生 = 学生(姓名=\"小红\", 成绩=[88, 92])  # @inspect 某学生 某学生.姓名 某学生.成绩\n\n    总分 = 累加(某学生.成绩)  # @inspect 总分 @stepover\n    text(\"上面调用 `累加` 时使用了 @stepover，所以不会进入函数内部逐行追踪。\")\n\n\ndef 累加(数列: list[int]) -> int:\n    \"\"\"对一个数列求和（被 @stepover 跳过内部细节）。\"\"\"\n    结果 = 0\n    for 元素 in 数列:\n        结果 += 元素  # @inspect 结果\n    return 结果\n\n\ndef 展示图片与链接():\n    text(\"# 三、图片与链接\")\n    text(\"`image(url)` 可以展示本地或远程图片（此处演示本地图片）：\")\n    image(\"../../images/python-logo.png\", width=200)\n    text(\"`link(title=..., url=...)` 生成一个外部引用（鼠标悬停可看详情）：\")\n    link(title=\"edtrace 项目主页\", url=\"https://github.com/percyliang/edtrace\",\n         organization=\"GitHub\", description=\"一个把 Python 程序变成可执行讲义的工具。\")\n    text(\"`link(函数对象)` 生成跳转到源码的内部链接：\")\n    link(累加)\n\n\ndef 展示图表():\n    text(\"# 四、图表（Vega-Lite）\")\n    text(\"`plot(spec)` 接收一个 Vega-Lite 规格，渲染成交互式图表：\")\n    规格 = {\n        \"$schema\": \"https://vega.github.io/schema/vega-lite/v5.json\",\n        \"description\": \"各编程语言热度示例\",\n        \"data\": {\"values\": [\n            {\"语言\": \"Python\", \"热度\": 95},\n            {\"语言\": \"JavaScript\", \"热度\": 90},\n            {\"语言\": \"Rust\", \"热度\": 72},\n            {\"语言\": \"Go\", \"热度\": 65},\n        ]},\n        \"mark\": \"bar\",\n        \"encoding\": {\n            \"x\": {\"field\": \"语言\", \"type\": \"nominal\", \"title\": \"编程语言\"},\n            \"y\": {\"field\": \"热度\", \"type\": \"quantitative\", \"title\": \"热度\"},\n        },\n    }\n    plot(规格)\n\n\ndef 控制指令():\n    text(\"# 五、@clear 指令\")\n    临时值 = 计算平方和(5)  # @inspect 临时值\n    text(\"`临时值` 现在显示在面板里。\")\n    text(\"执行到下一行后，用 @clear 把它从面板移除。\")  # @clear 临时值\n\n\ndef 计算平方和(n: int) -> int:\n    总和 = 0\n    for i in range(n):\n        总和 += i * i  # @inspect i 总和\n    return 总和\n\n\nif __name__ == \"__main__\":\n    main()\n"
+  },
+  "hidden_line_numbers": {
+    "edtrace\\examples_zh.py": [
+      41
+    ]
+  },
+  "steps": [
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 19,
+          "function_name": "main",
+          "code": "def main():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 27,
+          "function_name": "展示文本",
+          "code": "def 展示文本():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 28,
+          "function_name": "展示文本",
+          "code": "text(\"# 一、文本与排版\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "# 一、文本与排版",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 29,
+          "function_name": "展示文本",
+          "code": "text(\"edtrace 把每一次 `text(...)` 调用渲染成一行 Markdown，中文可以正常显示。\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "edtrace 把每一次 `text(...)` 调用渲染成一行 Markdown，中文可以正常显示。",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 30,
+          "function_name": "展示文本",
+          "code": "text(\"## 标题与强调\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 标题与强调",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 31,
+          "function_name": "展示文本",
+          "code": "text(\"支持 **粗体**、*斜体*，以及行内代码 `for i in range(n)`。\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "支持 **粗体**、*斜体*，以及行内代码 `for i in range(n)`。",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 32,
+          "function_name": "展示文本",
+          "code": "text(\"## 无序列表\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 无序列表",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 33,
+          "function_name": "展示文本",
+          "code": "text(\"- 第一点：把 Python 程序当作讲义\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- 第一点：把 Python 程序当作讲义",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 34,
+          "function_name": "展示文本",
+          "code": "text(\"- 第二点：边执行边展示变量\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- 第二点：边执行边展示变量",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 35,
+          "function_name": "展示文本",
+          "code": "text(\"- 第三点：这一条特别长，用来验证当内容超出一行宽度时是否会自动换行，继续写一些字凑够长度\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- 第三点：这一条特别长，用来验证当内容超出一行宽度时是否会自动换行，继续写一些字凑够长度",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 36,
+          "function_name": "展示文本",
+          "code": "text(\"## 数学公式\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 数学公式",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 37,
+          "function_name": "展示文本",
+          "code": "text(\"行内公式 $a^2 + b^2 = c^2$，以及 softmax：$\\\\sigma(z)_i = \\\\frac{e^{z_i}}{\\\\sum_j e^{z_j}}$\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "行内公式 $a^2 + b^2 = c^2$，以及 softmax：$\\sigma(z)_i = \\frac{e^{z_i}}{\\sum_j e^{z_j}}$",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 38,
+          "function_name": "展示文本",
+          "code": "text(\"一段被拆成多次调用的中文：\"), text(\"它们会\"), text(\"拼接在同一行。\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "一段被拆成多次调用的中文：",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        },
+        {
+          "type": "markdown",
+          "data": "它们会",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        },
+        {
+          "type": "markdown",
+          "data": "拼接在同一行。",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 39,
+          "function_name": "展示文本",
+          "code": "note(\"这是一条旁注（按 N 键切换显示），通常用于讲者备注。\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "note",
+          "data": "这是一条旁注（按 N 键切换显示），通常用于讲者备注。",
+          "style": null,
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 40,
+          "function_name": "展示文本",
+          "code": "text(\"下面这行源码会被隐藏，不出现在查看器里。\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "下面这行源码会被隐藏，不出现在查看器里。",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 41,
+          "function_name": "展示文本",
+          "code": "secret = \"你看不到这行代码\"  # @hide"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "展示文本()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 44,
+          "function_name": "展示数值",
+          "code": "def 展示数值():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 45,
+          "function_name": "展示数值",
+          "code": "text(\"# 二、变量检查（@inspect）\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "# 二、变量检查（@inspect）",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 46,
+          "function_name": "展示数值",
+          "code": "text(\"在代码行末尾写注释指令 @inspect，右侧浮动面板会实时显示变量的值。\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "在代码行末尾写注释指令 @inspect，右侧浮动面板会实时显示变量的值。",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 49,
+          "function_name": "展示数值",
+          "code": "向量 = np.array([1, 2, 3], dtype=np.int32)  # @inspect 向量"
+        }
+      ],
+      "env": {
+        "向量": {
+          "type": "numpy.ndarray",
+          "contents": [
+            1,
+            2,
+            3
+          ],
+          "dtype": "int32",
+          "shape": [
+            3
+          ]
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 50,
+          "function_name": "展示数值",
+          "code": "矩阵 = np.zeros((2, 3))  # @inspect 矩阵"
+        }
+      ],
+      "env": {
+        "矩阵": {
+          "type": "numpy.ndarray",
+          "contents": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "dtype": "float64",
+          "shape": [
+            2,
+            3
+          ]
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 53,
+          "function_name": "展示数值",
+          "code": "张量 = torch.tensor([[1.0, 2.0], [3.0, 4.0]])  # @inspect 张量"
+        }
+      ],
+      "env": {
+        "张量": {
+          "type": "torch.Tensor",
+          "contents": [
+            [
+              1.0,
+              2.0
+            ],
+            [
+              3.0,
+              4.0
+            ]
+          ],
+          "dtype": "torch.float32",
+          "shape": [
+            2,
+            2
+          ]
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 56,
+          "function_name": "展示数值",
+          "code": "列表 = [1, 2, \"三\", [4, 5]]  # @inspect 列表"
+        }
+      ],
+      "env": {
+        "列表": {
+          "type": "list",
+          "contents": [
+            {
+              "type": "int",
+              "contents": 1,
+              "dtype": null,
+              "shape": null
+            },
+            {
+              "type": "int",
+              "contents": 2,
+              "dtype": null,
+              "shape": null
+            },
+            {
+              "type": "str",
+              "contents": "三",
+              "dtype": null,
+              "shape": null
+            },
+            {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "int",
+                  "contents": 4,
+                  "dtype": null,
+                  "shape": null
+                },
+                {
+                  "type": "int",
+                  "contents": 5,
+                  "dtype": null,
+                  "shape": null
+                }
+              ],
+              "dtype": null,
+              "shape": null
+            }
+          ],
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 57,
+          "function_name": "展示数值",
+          "code": "字典 = {\"姓名\": \"小明\", \"成绩\": [90, 85, 100]}  # @inspect 字典"
+        }
+      ],
+      "env": {
+        "字典": {
+          "type": "dict",
+          "contents": {
+            "姓名": {
+              "type": "str",
+              "contents": "小明",
+              "dtype": null,
+              "shape": null
+            },
+            "成绩": {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "int",
+                  "contents": 90,
+                  "dtype": null,
+                  "shape": null
+                },
+                {
+                  "type": "int",
+                  "contents": 85,
+                  "dtype": null,
+                  "shape": null
+                },
+                {
+                  "type": "int",
+                  "contents": 100,
+                  "dtype": null,
+                  "shape": null
+                }
+              ],
+              "dtype": null,
+              "shape": null
+            }
+          },
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 60,
+          "function_name": "展示数值",
+          "code": "@dataclass(frozen=True)"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 61,
+          "function_name": "展示数值",
+          "code": "class 学生:"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 61,
+          "function_name": "展示数值",
+          "code": "class 学生:"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 60,
+          "function_name": "学生",
+          "code": "@dataclass(frozen=True)"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 61,
+          "function_name": "展示数值",
+          "code": "class 学生:"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 62,
+          "function_name": "学生",
+          "code": "姓名: str"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 61,
+          "function_name": "展示数值",
+          "code": "class 学生:"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 63,
+          "function_name": "学生",
+          "code": "成绩: list[int]"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 61,
+          "function_name": "展示数值",
+          "code": "class 学生:"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 60,
+          "function_name": "展示数值",
+          "code": "@dataclass(frozen=True)"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 61,
+          "function_name": "展示数值",
+          "code": "class 学生:"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 64,
+          "function_name": "展示数值",
+          "code": "某学生 = 学生(姓名=\"小红\", 成绩=[88, 92])  # @inspect 某学生 某学生.姓名 某学生.成绩"
+        }
+      ],
+      "env": {
+        "某学生": {
+          "type": "edtrace.examples_zh.学生",
+          "contents": {
+            "姓名": {
+              "type": "str",
+              "contents": "小红",
+              "dtype": null,
+              "shape": null
+            },
+            "成绩": {
+              "type": "list",
+              "contents": [
+                {
+                  "type": "int",
+                  "contents": 88,
+                  "dtype": null,
+                  "shape": null
+                },
+                {
+                  "type": "int",
+                  "contents": 92,
+                  "dtype": null,
+                  "shape": null
+                }
+              ],
+              "dtype": null,
+              "shape": null
+            }
+          },
+          "dtype": null,
+          "shape": null
+        },
+        "某学生.姓名": {
+          "type": "str",
+          "contents": "小红",
+          "dtype": null,
+          "shape": null
+        },
+        "某学生.成绩": {
+          "type": "list",
+          "contents": [
+            {
+              "type": "int",
+              "contents": 88,
+              "dtype": null,
+              "shape": null
+            },
+            {
+              "type": "int",
+              "contents": 92,
+              "dtype": null,
+              "shape": null
+            }
+          ],
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 66,
+          "function_name": "展示数值",
+          "code": "总分 = 累加(某学生.成绩)  # @inspect 总分 @stepover"
+        }
+      ],
+      "env": {
+        "总分": {
+          "type": "int",
+          "contents": 180,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 67,
+          "function_name": "展示数值",
+          "code": "text(\"上面调用 `累加` 时使用了 @stepover，所以不会进入函数内部逐行追踪。\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "上面调用 `累加` 时使用了 @stepover，所以不会进入函数内部逐行追踪。",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "展示数值()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "展示图片与链接()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "展示图片与链接()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 78,
+          "function_name": "展示图片与链接",
+          "code": "def 展示图片与链接():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "展示图片与链接()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 79,
+          "function_name": "展示图片与链接",
+          "code": "text(\"# 三、图片与链接\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "# 三、图片与链接",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "展示图片与链接()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 80,
+          "function_name": "展示图片与链接",
+          "code": "text(\"`image(url)` 可以展示本地或远程图片（此处演示本地图片）：\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "`image(url)` 可以展示本地或远程图片（此处演示本地图片）：",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "展示图片与链接()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 81,
+          "function_name": "展示图片与链接",
+          "code": "image(\"../../images/python-logo.png\", width=200)"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "image",
+          "data": "../../images/python-logo.png",
+          "style": {
+            "width": 200
+          },
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "展示图片与链接()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 82,
+          "function_name": "展示图片与链接",
+          "code": "text(\"`link(title=..., url=...)` 生成一个外部引用（鼠标悬停可看详情）：\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "`link(title=..., url=...)` 生成一个外部引用（鼠标悬停可看详情）：",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "展示图片与链接()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 83,
+          "function_name": "展示图片与链接",
+          "code": "link(title=\"edtrace 项目主页\", url=\"https://github.com/percyliang/edtrace\","
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "展示图片与链接()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 84,
+          "function_name": "展示图片与链接",
+          "code": "organization=\"GitHub\", description=\"一个把 Python 程序变成可执行讲义的工具。\")"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "展示图片与链接()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 83,
+          "function_name": "展示图片与链接",
+          "code": "link(title=\"edtrace 项目主页\", url=\"https://github.com/percyliang/edtrace\","
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "link",
+          "data": "edtrace 项目主页",
+          "style": {},
+          "external_link": {
+            "title": "edtrace 项目主页",
+            "authors": null,
+            "organization": "GitHub",
+            "date": null,
+            "url": "https://github.com/percyliang/edtrace",
+            "description": "一个把 Python 程序变成可执行讲义的工具。",
+            "notes": null
+          },
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "展示图片与链接()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 85,
+          "function_name": "展示图片与链接",
+          "code": "text(\"`link(函数对象)` 生成跳转到源码的内部链接：\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "`link(函数对象)` 生成跳转到源码的内部链接：",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "展示图片与链接()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 86,
+          "function_name": "展示图片与链接",
+          "code": "link(累加)"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "link",
+          "data": "累加",
+          "style": {},
+          "external_link": null,
+          "internal_link": {
+            "path": "edtrace\\examples_zh.py",
+            "line_number": 70
+          }
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "展示图片与链接()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 89,
+          "function_name": "展示图表",
+          "code": "def 展示图表():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 90,
+          "function_name": "展示图表",
+          "code": "text(\"# 四、图表（Vega-Lite）\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "# 四、图表（Vega-Lite）",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 91,
+          "function_name": "展示图表",
+          "code": "text(\"`plot(spec)` 接收一个 Vega-Lite 规格，渲染成交互式图表：\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "`plot(spec)` 接收一个 Vega-Lite 规格，渲染成交互式图表：",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 93,
+          "function_name": "展示图表",
+          "code": "\"$schema\": \"https://vega.github.io/schema/vega-lite/v5.json\","
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 94,
+          "function_name": "展示图表",
+          "code": "\"description\": \"各编程语言热度示例\","
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 95,
+          "function_name": "展示图表",
+          "code": "\"data\": {\"values\": ["
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 96,
+          "function_name": "展示图表",
+          "code": "{\"语言\": \"Python\", \"热度\": 95},"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 97,
+          "function_name": "展示图表",
+          "code": "{\"语言\": \"JavaScript\", \"热度\": 90},"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 98,
+          "function_name": "展示图表",
+          "code": "{\"语言\": \"Rust\", \"热度\": 72},"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 99,
+          "function_name": "展示图表",
+          "code": "{\"语言\": \"Go\", \"热度\": 65},"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 95,
+          "function_name": "展示图表",
+          "code": "\"data\": {\"values\": ["
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 101,
+          "function_name": "展示图表",
+          "code": "\"mark\": \"bar\","
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 103,
+          "function_name": "展示图表",
+          "code": "\"x\": {\"field\": \"语言\", \"type\": \"nominal\", \"title\": \"编程语言\"},"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 104,
+          "function_name": "展示图表",
+          "code": "\"y\": {\"field\": \"热度\", \"type\": \"quantitative\", \"title\": \"热度\"},"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 102,
+          "function_name": "展示图表",
+          "code": "\"encoding\": {"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 92,
+          "function_name": "展示图表",
+          "code": "规格 = {"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 107,
+          "function_name": "展示图表",
+          "code": "plot(规格)"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "plot",
+          "data": {
+            "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+            "description": "各编程语言热度示例",
+            "data": {
+              "values": [
+                {
+                  "语言": "Python",
+                  "热度": 95
+                },
+                {
+                  "语言": "JavaScript",
+                  "热度": 90
+                },
+                {
+                  "语言": "Rust",
+                  "热度": 72
+                },
+                {
+                  "语言": "Go",
+                  "热度": 65
+                }
+              ]
+            },
+            "mark": "bar",
+            "encoding": {
+              "x": {
+                "field": "语言",
+                "type": "nominal",
+                "title": "编程语言"
+              },
+              "y": {
+                "field": "热度",
+                "type": "quantitative",
+                "title": "热度"
+              }
+            }
+          },
+          "style": null,
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "展示图表()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 110,
+          "function_name": "控制指令",
+          "code": "def 控制指令():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 111,
+          "function_name": "控制指令",
+          "code": "text(\"# 五、@clear 指令\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "# 五、@clear 指令",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 117,
+          "function_name": "计算平方和",
+          "code": "def 计算平方和(n: int) -> int:"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 118,
+          "function_name": "计算平方和",
+          "code": "总和 = 0"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 119,
+          "function_name": "计算平方和",
+          "code": "for i in range(n):"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 120,
+          "function_name": "计算平方和",
+          "code": "总和 += i * i  # @inspect i 总和"
+        }
+      ],
+      "env": {
+        "i": {
+          "type": "int",
+          "contents": 0,
+          "dtype": null,
+          "shape": null
+        },
+        "总和": {
+          "type": "int",
+          "contents": 0,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 119,
+          "function_name": "计算平方和",
+          "code": "for i in range(n):"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 120,
+          "function_name": "计算平方和",
+          "code": "总和 += i * i  # @inspect i 总和"
+        }
+      ],
+      "env": {
+        "i": {
+          "type": "int",
+          "contents": 1,
+          "dtype": null,
+          "shape": null
+        },
+        "总和": {
+          "type": "int",
+          "contents": 1,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 119,
+          "function_name": "计算平方和",
+          "code": "for i in range(n):"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 120,
+          "function_name": "计算平方和",
+          "code": "总和 += i * i  # @inspect i 总和"
+        }
+      ],
+      "env": {
+        "i": {
+          "type": "int",
+          "contents": 2,
+          "dtype": null,
+          "shape": null
+        },
+        "总和": {
+          "type": "int",
+          "contents": 5,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 119,
+          "function_name": "计算平方和",
+          "code": "for i in range(n):"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 120,
+          "function_name": "计算平方和",
+          "code": "总和 += i * i  # @inspect i 总和"
+        }
+      ],
+      "env": {
+        "i": {
+          "type": "int",
+          "contents": 3,
+          "dtype": null,
+          "shape": null
+        },
+        "总和": {
+          "type": "int",
+          "contents": 14,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 119,
+          "function_name": "计算平方和",
+          "code": "for i in range(n):"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 120,
+          "function_name": "计算平方和",
+          "code": "总和 += i * i  # @inspect i 总和"
+        }
+      ],
+      "env": {
+        "i": {
+          "type": "int",
+          "contents": 4,
+          "dtype": null,
+          "shape": null
+        },
+        "总和": {
+          "type": "int",
+          "contents": 30,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 119,
+          "function_name": "计算平方和",
+          "code": "for i in range(n):"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 121,
+          "function_name": "计算平方和",
+          "code": "return 总和"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 112,
+          "function_name": "控制指令",
+          "code": "临时值 = 计算平方和(5)  # @inspect 临时值"
+        }
+      ],
+      "env": {
+        "临时值": {
+          "type": "int",
+          "contents": 30,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 113,
+          "function_name": "控制指令",
+          "code": "text(\"`临时值` 现在显示在面板里。\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "`临时值` 现在显示在面板里。",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        },
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 114,
+          "function_name": "控制指令",
+          "code": "text(\"执行到下一行后，用 @clear 把它从面板移除。\")  # @clear 临时值"
+        }
+      ],
+      "env": {
+        "临时值": null
+      },
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "执行到下一行后，用 @clear 把它从面板移除。",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "edtrace\\examples_zh.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "控制指令()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    }
+  ]
+}

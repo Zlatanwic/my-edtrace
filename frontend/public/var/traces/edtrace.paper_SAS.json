@@ -1,0 +1,316 @@
+{
+  "files": {
+    "src\\edtrace\\paper_SAS.py": "import numpy as np\nimport torch\nfrom dataclasses import dataclass\nfrom .execute_util import text, image, link, plot, note\n\ndef main():\n    in_one_word()\n    背景介绍()\n\n\n\n\n\n\n\n\ndef in_one_word():\n    text(\"简单来说，SAS主要是一个sparse attention编译器/生成器，从用户的简单的几句代码，生成高性能kernel\")\n\ndef 背景介绍():\n    kv_cache()\n    sparse_attention()\n\n\ndef kv_cache():\n    text(\"kv cache在一定程度上解决了decode阶段的compute-bound问题，就是避免每次decode都需要重新算一遍历史token的kv，但是又占用了大量显存\")\n\n\ndef sparse_attention():\n    text(\"模型不需要每次都attend所有历史token，而是“稀疏”地attend部分token,分为省计算，与省内存\")"
+  },
+  "hidden_line_numbers": {
+    "src\\edtrace\\paper_SAS.py": []
+  },
+  "steps": [
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 6,
+          "function_name": "main",
+          "code": "def main():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "in_one_word()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "in_one_word()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 17,
+          "function_name": "in_one_word",
+          "code": "def in_one_word():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "in_one_word()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 18,
+          "function_name": "in_one_word",
+          "code": "text(\"简单来说，SAS主要是一个sparse attention编译器/生成器，从用户的简单的几句代码，生成高性能kernel\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "简单来说，SAS主要是一个sparse attention编译器/生成器，从用户的简单的几句代码，生成高性能kernel",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "in_one_word()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 20,
+          "function_name": "背景介绍",
+          "code": "def 背景介绍():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 21,
+          "function_name": "背景介绍",
+          "code": "kv_cache()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 21,
+          "function_name": "背景介绍",
+          "code": "kv_cache()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 25,
+          "function_name": "kv_cache",
+          "code": "def kv_cache():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 21,
+          "function_name": "背景介绍",
+          "code": "kv_cache()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 26,
+          "function_name": "kv_cache",
+          "code": "text(\"kv cache在一定程度上解决了decode阶段的compute-bound问题，就是避免每次decode都需要重新算一遍历史token的kv，但是又占用了大量显存\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "kv cache在一定程度上解决了decode阶段的compute-bound问题，就是避免每次decode都需要重新算一遍历史token的kv，但是又占用了大量显存",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 21,
+          "function_name": "背景介绍",
+          "code": "kv_cache()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 22,
+          "function_name": "背景介绍",
+          "code": "sparse_attention()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 22,
+          "function_name": "背景介绍",
+          "code": "sparse_attention()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 29,
+          "function_name": "sparse_attention",
+          "code": "def sparse_attention():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 22,
+          "function_name": "背景介绍",
+          "code": "sparse_attention()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 30,
+          "function_name": "sparse_attention",
+          "code": "text(\"模型不需要每次都attend所有历史token，而是“稀疏”地attend部分token,分为省计算，与省内存\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "模型不需要每次都attend所有历史token，而是“稀疏”地attend部分token,分为省计算，与省内存",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 22,
+          "function_name": "背景介绍",
+          "code": "sparse_attention()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    }
+  ]
+}
