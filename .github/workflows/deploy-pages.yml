@@ -34,9 +34,12 @@ jobs:
 
       - name: Prepare public assets
         run: |
+          mkdir -p /tmp/edtrace-public-traces
+          if [ -d frontend/public/var/traces ]; then cp -R frontend/public/var/traces/. /tmp/edtrace-public-traces/; fi
           rm -rf frontend/public/images frontend/public/var
           mkdir -p frontend/public/images frontend/public/var/traces
           cp -R images/. frontend/public/images/
+          cp -R /tmp/edtrace-public-traces/. frontend/public/var/traces/
           if [ -d var/traces ]; then cp -R var/traces/. frontend/public/var/traces/; fi
           if [ -d backend/src/var/traces ]; then cp -R backend/src/var/traces/. frontend/public/var/traces/; fi
 
