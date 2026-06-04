@@ -1,6 +1,6 @@
 {
   "files": {
-    "src\\edtrace\\paper_SAS.py": "import numpy as np\nimport torch\nfrom dataclasses import dataclass\nfrom .execute_util import text, image, link, plot, note\n\ndef main():\n    in_one_word()\n    背景介绍()\n\n\n\n\ndef in_one_word():\n    text(\"简单来说，SAS主要是一个sparse attention编译器/生成器，从用户的简单的几句代码，生成高性能kernel\")\n\ndef 背景介绍():\n    kv_cache()\n    sparse_attention()\n    两个Gap()\n    SAS的贡献()\n    System_Overview()\n\n\ndef kv_cache():\n    text(\"kv cache在一定程度上解决了decode阶段的compute-bound问题，就是避免每次decode都需要重新算一遍历史token的kv，但是又占用了大量显存\")\n\n\ndef sparse_attention():\n    text(\"## sparse attention\")\n    text(\"模型不需要每次都attend所有历史token，而是“稀疏”地attend部分token,省计算+省内存\")\n    text(\"### 静态稀疏vs动态稀疏\")\n    text(\"- 静态：根据位置决定attend哪些token，比如sliding window，strided attention\")\n    image(\"../../images/static.png\", width=700)\n    text(\"- 动态：根据运行时内容决定看哪些 token，做importance score(H2O)\")\n    image(\"../../images/dyn.png\", width=400)\n\ndef 两个Gap():\n    text(\"### Gap1:Programming abstraction 不够好\")\n    text(\"sparse attention算法设计很快，但是系统实现困难。很多都是写死的，一个新的sprase pattern较难迁移\")\n    text(\"### Gap2:KV cache 优化不自动\")\n    text(\"SAS要自动推导三项：\")\n    text(\"1. 最小 KV cache size 是多少？\")\n    text(\"2. 当前 query 应该看 cache 里的哪些 entry？\")\n    text(\"3. 新 token 的 KV 应该写入 cache 的哪个位置？\")\n\ndef SAS的贡献():\n    text(\"第一，SAS 是一个同时支持静态和动态 sparse attention 的自动 kernel 生成工具。\")\n    text(\"第二，SAS 提供一种 DSL / programming abstraction，让用户用 primitive 和逻辑操作符组合 attention pattern。\")\n    text(\"第三，SAS 有一个几何分析器，可以从 attention pattern 中提取规律，自动生成 KV cache 管理函数。\")\n    text(\"第四，SAS 支持 Nvidia GPU 和 AWS Trainium 两个后端，不只是单硬件上的 prototype。\")\n    text(\"实验上，SAS 在 GPU 上相对 FlexAttention 的 context encoding 有 1.10–1.22× speedup，token generation 有 2.68–2.80× speedup；在 Trainium 上相对 dense attention 也有明显加速。\")\n\n\ndef System_Overview():\n    image(\"../../images/sas_overview.png\", width=700)\n    text(\n        \"```python\\n\"\n        \"p = Diag(size=2)\\n\"\n        \"p += Dynamic(budget=2, score=sas.op.attn_score.sum(dim=1))\\n\"\n        \"```\"\n    )\n"
+    "src\\edtrace\\paper_SAS.py": "import numpy as np\nimport torch\nfrom dataclasses import dataclass\nfrom .execute_util import text, image, link, plot, note\n\ndef main():\n    in_one_word()\n    背景介绍()\n\n\n\n\ndef in_one_word():\n    text(\"简单来说，SAS主要是一个sparse attention编译器/生成器，从用户的简单的几句代码，生成高性能kernel\")\n\ndef 背景介绍():\n    kv_cache()\n    sparse_attention()\n    两个Gap()\n    SAS的贡献()\n    System_Overview()\n\n\ndef kv_cache():\n    text(\"kv cache在一定程度上解决了decode阶段的compute-bound问题，就是避免每次decode都需要重新算一遍历史token的kv，但是又占用了大量显存\")\n\n\ndef sparse_attention():\n    text(\"## sparse attention\")\n    text(\"模型不需要每次都attend所有历史token，而是“稀疏”地attend部分token,省计算+省内存\")\n    text(\"### 静态稀疏vs动态稀疏\")\n    text(\"- 静态：根据位置决定attend哪些token，比如sliding window，strided attention\")\n    image(\"../../images/static.png\", width=700)\n    text(\"- 动态：根据运行时内容决定看哪些 token，做importance score(H2O)\")\n    image(\"../../images/dyn.png\", width=400)\n\ndef 两个Gap():\n    text(\"### Gap1:Programming abstraction 不够好\")\n    text(\"sparse attention算法设计很快，但是系统实现困难。很多都是写死的，一个新的sprase pattern较难迁移\")\n    text(\"### Gap2:KV cache 优化不自动\")\n    text(\"SAS要自动推导三项：\")\n    text(\"1. 最小 KV cache size 是多少？\")\n    text(\"2. 当前 query 应该看 cache 里的哪些 entry？\")\n    text(\"3. 新 token 的 KV 应该写入 cache 的哪个位置？\")\n\ndef SAS的贡献():\n    text(\"第一，SAS 是一个同时支持静态和动态 sparse attention 的自动 kernel 生成工具。\")\n    text(\"第二，SAS 提供一种 DSL / programming abstraction，让用户用 primitive 和逻辑操作符组合 attention pattern。\")\n    text(\"第三，SAS 有一个几何分析器，可以从 attention pattern 中提取规律，自动生成 KV cache 管理函数。\")\n    text(\"第四，SAS 支持 Nvidia GPU 和 AWS Trainium 两个后端，不只是单硬件上的 prototype。\")\n    text(\"实验上，SAS 在 GPU 上相对 FlexAttention 的 context encoding 有 1.10–1.22× speedup，token generation 有 2.68–2.80× speedup；在 Trainium 上相对 dense attention 也有明显加速。\")\n\n\ndef System_Overview():\n    image(\"../../images/sas_overview.png\", width=700)\n    text(\"```python\\np = Diag(size=2)\\np += Dynamic(budget=2, score=sas.op.attn_score.sum(dim=1))\\n```\")\n"
   },
   "hidden_line_numbers": {
     "src\\edtrace\\paper_SAS.py": []
@@ -1094,55 +1094,7 @@
           "path": "src\\edtrace\\paper_SAS.py",
           "line_number": 56,
           "function_name": "System_Overview",
-          "code": "text("
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 8,
-          "function_name": "main",
-          "code": "背景介绍()"
-        },
-        {
-          "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 21,
-          "function_name": "背景介绍",
-          "code": "System_Overview()"
-        },
-        {
-          "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 57,
-          "function_name": "System_Overview",
-          "code": "\"```python\\n\""
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 8,
-          "function_name": "main",
-          "code": "背景介绍()"
-        },
-        {
-          "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 21,
-          "function_name": "背景介绍",
-          "code": "System_Overview()"
-        },
-        {
-          "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 56,
-          "function_name": "System_Overview",
-          "code": "text("
+          "code": "text(\"```python\\np = Diag(size=2)\\np += Dynamic(budget=2, score=sas.op.attn_score.sum(dim=1))\\n```\")"
         }
       ],
       "env": {},

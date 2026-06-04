@@ -53,9 +53,4 @@ def SAS的贡献():
 
 def System_Overview():
     image("../../images/sas_overview.png", width=700)
-    text(
-        "```python\n"
-        "p = Diag(size=2)\n"
-        "p += Dynamic(budget=2, score=sas.op.attn_score.sum(dim=1))\n"
-        "```"
-    )
+    text("```python\np = Diag(size=2)\np += Dynamic(budget=2, score=sas.op.attn_score.sum(dim=1))\n```")
