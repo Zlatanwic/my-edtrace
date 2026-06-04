@@ -168,6 +168,30 @@ button {
   width: 800px;
 }
 
+.rendering-item {
+  display: block;
+}
+
+.markdown {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.markdown pre {
+  display: block;
+  margin: 4px 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  background-color: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+}
+
+.markdown pre code {
+  font-family: monospace;
+  white-space: pre;
+}
+
 .env-panel {
   position: fixed;
   overflow-x: auto;

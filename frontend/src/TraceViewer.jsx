@@ -613,9 +613,9 @@ function renderLines({trace, tracePath, currentPath, currentLineNumber, currentS
 
       // Add all renderings
       const renderedRenderings = renderings.map((rendering, index) => {
-        return <span key={index}>
+        return <div key={index} className="rendering-item">
           {renderRendering(rendering, navigate, tracePath)}
-        </span>;
+        </div>;
       });
       renderedItems.push(<div key="renderings" className="renderings">{renderedRenderings}</div>);
     } else {
@@ -797,7 +797,7 @@ function MarkdownRenderer({ content, style }) {
     }
   }, [renderedContent]);  // If put this, then don't update; otherwise too slow
 
-  return <span className="markdown" style={style} dangerouslySetInnerHTML={{ __html: renderedContent }} />;
+  return <div className="markdown" style={style} dangerouslySetInnerHTML={{ __html: renderedContent }} />;
 }
 
 function ExternalLink({ link, style, anchorText }) {

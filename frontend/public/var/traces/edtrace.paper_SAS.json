@@ -1,6 +1,6 @@
 {
   "files": {
-    "src\\edtrace\\paper_SAS.py": "import numpy as np\nimport torch\nfrom dataclasses import dataclass\nfrom .execute_util import text, image, link, plot, note\n\ndef main():\n    in_one_word()\n    背景介绍()\n\n\n\n\n\n\n\n\ndef in_one_word():\n    text(\"简单来说，SAS主要是一个sparse attention编译器/生成器，从用户的简单的几句代码，生成高性能kernel\")\n\ndef 背景介绍():\n    kv_cache()\n    sparse_attention()\n\n\ndef kv_cache():\n    text(\"kv cache在一定程度上解决了decode阶段的compute-bound问题，就是避免每次decode都需要重新算一遍历史token的kv，但是又占用了大量显存\")\n\n\ndef sparse_attention():\n    text(\"## sparse attention\")\n    text(\"模型不需要每次都attend所有历史token，而是“稀疏”地attend部分token,省计算+省内存\")\n    text(\"### 静态稀疏vs动态稀疏\")\n    text(\"- 静态：根据位置决定attend哪些token\")\n    image(\"../../images/static.png\", width=1000)\n    text(\"- 动态：根据运行时内容决定看哪些 token\")\n"
+    "src\\edtrace\\paper_SAS.py": "import numpy as np\nimport torch\nfrom dataclasses import dataclass\nfrom .execute_util import text, image, link, plot, note\n\ndef main():\n    in_one_word()\n    背景介绍()\n\n\n\n\ndef in_one_word():\n    text(\"简单来说，SAS主要是一个sparse attention编译器/生成器，从用户的简单的几句代码，生成高性能kernel\")\n\ndef 背景介绍():\n    kv_cache()\n    sparse_attention()\n    两个Gap()\n    SAS的贡献()\n    System_Overview()\n\n\ndef kv_cache():\n    text(\"kv cache在一定程度上解决了decode阶段的compute-bound问题，就是避免每次decode都需要重新算一遍历史token的kv，但是又占用了大量显存\")\n\n\ndef sparse_attention():\n    text(\"## sparse attention\")\n    text(\"模型不需要每次都attend所有历史token，而是“稀疏”地attend部分token,省计算+省内存\")\n    text(\"### 静态稀疏vs动态稀疏\")\n    text(\"- 静态：根据位置决定attend哪些token，比如sliding window，strided attention\")\n    image(\"../../images/static.png\", width=700)\n    text(\"- 动态：根据运行时内容决定看哪些 token，做importance score(H2O)\")\n    image(\"../../images/dyn.png\", width=400)\n\ndef 两个Gap():\n    text(\"### Gap1:Programming abstraction 不够好\")\n    text(\"sparse attention算法设计很快，但是系统实现困难。很多都是写死的，一个新的sprase pattern较难迁移\")\n    text(\"### Gap2:KV cache 优化不自动\")\n    text(\"SAS要自动推导三项：\")\n    text(\"1. 最小 KV cache size 是多少？\")\n    text(\"2. 当前 query 应该看 cache 里的哪些 entry？\")\n    text(\"3. 新 token 的 KV 应该写入 cache 的哪个位置？\")\n\ndef SAS的贡献():\n    text(\"第一，SAS 是一个同时支持静态和动态 sparse attention 的自动 kernel 生成工具。\")\n    text(\"第二，SAS 提供一种 DSL / programming abstraction，让用户用 primitive 和逻辑操作符组合 attention pattern。\")\n    text(\"第三，SAS 有一个几何分析器，可以从 attention pattern 中提取规律，自动生成 KV cache 管理函数。\")\n    text(\"第四，SAS 支持 Nvidia GPU 和 AWS Trainium 两个后端，不只是单硬件上的 prototype。\")\n    text(\"实验上，SAS 在 GPU 上相对 FlexAttention 的 context encoding 有 1.10–1.22× speedup，token generation 有 2.68–2.80× speedup；在 Trainium 上相对 dense attention 也有明显加速。\")\n\n\ndef System_Overview():\n    image(\"../../images/sas_overview.png\", width=700)\n    text(\n        \"```python\\n\"\n        \"p = Diag(size=2)\\n\"\n        \"p += Dynamic(budget=2, score=sas.op.attn_score.sum(dim=1))\\n\"\n        \"```\"\n    )\n"
   },
   "hidden_line_numbers": {
     "src\\edtrace\\paper_SAS.py": []
@@ -40,7 +40,7 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 17,
+          "line_number": 13,
           "function_name": "in_one_word",
           "code": "def in_one_word():"
         }
@@ -58,7 +58,7 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 18,
+          "line_number": 14,
           "function_name": "in_one_word",
           "code": "text(\"简单来说，SAS主要是一个sparse attention编译器/生成器，从用户的简单的几句代码，生成高性能kernel\")"
         }
@@ -108,7 +108,7 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 20,
+          "line_number": 16,
           "function_name": "背景介绍",
           "code": "def 背景介绍():"
         }
@@ -126,7 +126,7 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 21,
+          "line_number": 17,
           "function_name": "背景介绍",
           "code": "kv_cache()"
         }
@@ -144,13 +144,13 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 21,
+          "line_number": 17,
           "function_name": "背景介绍",
           "code": "kv_cache()"
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 25,
+          "line_number": 24,
           "function_name": "kv_cache",
           "code": "def kv_cache():"
         }
@@ -168,13 +168,13 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 21,
+          "line_number": 17,
           "function_name": "背景介绍",
           "code": "kv_cache()"
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 26,
+          "line_number": 25,
           "function_name": "kv_cache",
           "code": "text(\"kv cache在一定程度上解决了decode阶段的compute-bound问题，就是避免每次decode都需要重新算一遍历史token的kv，但是又占用了大量显存\")"
         }
@@ -200,7 +200,7 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 21,
+          "line_number": 17,
           "function_name": "背景介绍",
           "code": "kv_cache()"
         }
@@ -218,7 +218,7 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 22,
+          "line_number": 18,
           "function_name": "背景介绍",
           "code": "sparse_attention()"
         }
@@ -236,13 +236,13 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 22,
+          "line_number": 18,
           "function_name": "背景介绍",
           "code": "sparse_attention()"
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 29,
+          "line_number": 28,
           "function_name": "sparse_attention",
           "code": "def sparse_attention():"
         }
@@ -260,13 +260,13 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 22,
+          "line_number": 18,
           "function_name": "背景介绍",
           "code": "sparse_attention()"
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 30,
+          "line_number": 29,
           "function_name": "sparse_attention",
           "code": "text(\"## sparse attention\")"
         }
@@ -292,13 +292,13 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 22,
+          "line_number": 18,
           "function_name": "背景介绍",
           "code": "sparse_attention()"
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 31,
+          "line_number": 30,
           "function_name": "sparse_attention",
           "code": "text(\"模型不需要每次都attend所有历史token，而是“稀疏”地attend部分token,省计算+省内存\")"
         }
@@ -324,13 +324,13 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 22,
+          "line_number": 18,
           "function_name": "背景介绍",
           "code": "sparse_attention()"
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 32,
+          "line_number": 31,
           "function_name": "sparse_attention",
           "code": "text(\"### 静态稀疏vs动态稀疏\")"
         }
@@ -356,22 +356,22 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 22,
+          "line_number": 18,
           "function_name": "背景介绍",
           "code": "sparse_attention()"
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 33,
+          "line_number": 32,
           "function_name": "sparse_attention",
-          "code": "text(\"- 静态：根据位置决定attend哪些token\")"
+          "code": "text(\"- 静态：根据位置决定attend哪些token，比如sliding window，strided attention\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "- 静态：根据位置决定attend哪些token",
+          "data": "- 静态：根据位置决定attend哪些token，比如sliding window，strided attention",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -388,15 +388,15 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 22,
+          "line_number": 18,
           "function_name": "背景介绍",
           "code": "sparse_attention()"
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 34,
+          "line_number": 33,
           "function_name": "sparse_attention",
-          "code": "image(\"../../images/static.png\", width=1000)"
+          "code": "image(\"../../images/static.png\", width=700)"
         }
       ],
       "env": {},
@@ -405,7 +405,7 @@
           "type": "image",
           "data": "../../images/static.png",
           "style": {
-            "width": 1000
+            "width": 700
           },
           "external_link": null,
           "internal_link": null
@@ -422,22 +422,22 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 22,
+          "line_number": 18,
           "function_name": "背景介绍",
           "code": "sparse_attention()"
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 35,
+          "line_number": 34,
           "function_name": "sparse_attention",
-          "code": "text(\"- 动态：根据运行时内容决定看哪些 token\")"
+          "code": "text(\"- 动态：根据运行时内容决定看哪些 token，做importance score(H2O)\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "- 动态：根据运行时内容决定看哪些 token",
+          "data": "- 动态：根据运行时内容决定看哪些 token，做importance score(H2O)",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -454,9 +454,721 @@
         },
         {
           "path": "src\\edtrace\\paper_SAS.py",
-          "line_number": 22,
+          "line_number": 18,
           "function_name": "背景介绍",
           "code": "sparse_attention()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 35,
+          "function_name": "sparse_attention",
+          "code": "image(\"../../images/dyn.png\", width=400)"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "image",
+          "data": "../../images/dyn.png",
+          "style": {
+            "width": 400
+          },
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 18,
+          "function_name": "背景介绍",
+          "code": "sparse_attention()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 19,
+          "function_name": "背景介绍",
+          "code": "两个Gap()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 19,
+          "function_name": "背景介绍",
+          "code": "两个Gap()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 37,
+          "function_name": "两个Gap",
+          "code": "def 两个Gap():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 19,
+          "function_name": "背景介绍",
+          "code": "两个Gap()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 38,
+          "function_name": "两个Gap",
+          "code": "text(\"### Gap1:Programming abstraction 不够好\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "### Gap1:Programming abstraction 不够好",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 19,
+          "function_name": "背景介绍",
+          "code": "两个Gap()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 39,
+          "function_name": "两个Gap",
+          "code": "text(\"sparse attention算法设计很快，但是系统实现困难。很多都是写死的，一个新的sprase pattern较难迁移\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "sparse attention算法设计很快，但是系统实现困难。很多都是写死的，一个新的sprase pattern较难迁移",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 19,
+          "function_name": "背景介绍",
+          "code": "两个Gap()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 40,
+          "function_name": "两个Gap",
+          "code": "text(\"### Gap2:KV cache 优化不自动\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "### Gap2:KV cache 优化不自动",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 19,
+          "function_name": "背景介绍",
+          "code": "两个Gap()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 41,
+          "function_name": "两个Gap",
+          "code": "text(\"SAS要自动推导三项：\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "SAS要自动推导三项：",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 19,
+          "function_name": "背景介绍",
+          "code": "两个Gap()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 42,
+          "function_name": "两个Gap",
+          "code": "text(\"1. 最小 KV cache size 是多少？\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "1. 最小 KV cache size 是多少？",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 19,
+          "function_name": "背景介绍",
+          "code": "两个Gap()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 43,
+          "function_name": "两个Gap",
+          "code": "text(\"2. 当前 query 应该看 cache 里的哪些 entry？\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "2. 当前 query 应该看 cache 里的哪些 entry？",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 19,
+          "function_name": "背景介绍",
+          "code": "两个Gap()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 44,
+          "function_name": "两个Gap",
+          "code": "text(\"3. 新 token 的 KV 应该写入 cache 的哪个位置？\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "3. 新 token 的 KV 应该写入 cache 的哪个位置？",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 19,
+          "function_name": "背景介绍",
+          "code": "两个Gap()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 20,
+          "function_name": "背景介绍",
+          "code": "SAS的贡献()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 20,
+          "function_name": "背景介绍",
+          "code": "SAS的贡献()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 46,
+          "function_name": "SAS的贡献",
+          "code": "def SAS的贡献():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 20,
+          "function_name": "背景介绍",
+          "code": "SAS的贡献()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 47,
+          "function_name": "SAS的贡献",
+          "code": "text(\"第一，SAS 是一个同时支持静态和动态 sparse attention 的自动 kernel 生成工具。\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "第一，SAS 是一个同时支持静态和动态 sparse attention 的自动 kernel 生成工具。",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 20,
+          "function_name": "背景介绍",
+          "code": "SAS的贡献()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 48,
+          "function_name": "SAS的贡献",
+          "code": "text(\"第二，SAS 提供一种 DSL / programming abstraction，让用户用 primitive 和逻辑操作符组合 attention pattern。\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "第二，SAS 提供一种 DSL / programming abstraction，让用户用 primitive 和逻辑操作符组合 attention pattern。",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 20,
+          "function_name": "背景介绍",
+          "code": "SAS的贡献()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 49,
+          "function_name": "SAS的贡献",
+          "code": "text(\"第三，SAS 有一个几何分析器，可以从 attention pattern 中提取规律，自动生成 KV cache 管理函数。\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "第三，SAS 有一个几何分析器，可以从 attention pattern 中提取规律，自动生成 KV cache 管理函数。",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 20,
+          "function_name": "背景介绍",
+          "code": "SAS的贡献()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 50,
+          "function_name": "SAS的贡献",
+          "code": "text(\"第四，SAS 支持 Nvidia GPU 和 AWS Trainium 两个后端，不只是单硬件上的 prototype。\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "第四，SAS 支持 Nvidia GPU 和 AWS Trainium 两个后端，不只是单硬件上的 prototype。",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 20,
+          "function_name": "背景介绍",
+          "code": "SAS的贡献()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 51,
+          "function_name": "SAS的贡献",
+          "code": "text(\"实验上，SAS 在 GPU 上相对 FlexAttention 的 context encoding 有 1.10–1.22× speedup，token generation 有 2.68–2.80× speedup；在 Trainium 上相对 dense attention 也有明显加速。\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "实验上，SAS 在 GPU 上相对 FlexAttention 的 context encoding 有 1.10–1.22× speedup，token generation 有 2.68–2.80× speedup；在 Trainium 上相对 dense attention 也有明显加速。",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 20,
+          "function_name": "背景介绍",
+          "code": "SAS的贡献()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 21,
+          "function_name": "背景介绍",
+          "code": "System_Overview()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 21,
+          "function_name": "背景介绍",
+          "code": "System_Overview()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 54,
+          "function_name": "System_Overview",
+          "code": "def System_Overview():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 21,
+          "function_name": "背景介绍",
+          "code": "System_Overview()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 55,
+          "function_name": "System_Overview",
+          "code": "image(\"../../images/sas_overview.png\", width=700)"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "image",
+          "data": "../../images/sas_overview.png",
+          "style": {
+            "width": 700
+          },
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 21,
+          "function_name": "背景介绍",
+          "code": "System_Overview()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 56,
+          "function_name": "System_Overview",
+          "code": "text("
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 21,
+          "function_name": "背景介绍",
+          "code": "System_Overview()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 57,
+          "function_name": "System_Overview",
+          "code": "\"```python\\n\""
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 21,
+          "function_name": "背景介绍",
+          "code": "System_Overview()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 56,
+          "function_name": "System_Overview",
+          "code": "text("
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "```python\np = Diag(size=2)\np += Dynamic(budget=2, score=sas.op.attn_score.sum(dim=1))\n```",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "背景介绍()"
+        },
+        {
+          "path": "src\\edtrace\\paper_SAS.py",
+          "line_number": 21,
+          "function_name": "背景介绍",
+          "code": "System_Overview()"
         }
       ],
       "env": {},
